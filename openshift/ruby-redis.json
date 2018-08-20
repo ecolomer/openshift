@@ -75,7 +75,7 @@
             "name": "ruby-sinatra",
             "protocol": "TCP",
             "port": 4567,
-            "targetPort": 4567
+            "targetPort": 8080
           }
         ],
         "selector": {
@@ -169,7 +169,14 @@
           "contextDir": "${RUBY_CONTEXT_DIR}"
         },
         "strategy": {
-          "type": "Docker"
+          "sourceStrategy": {
+            "from": {
+              "kind": "ImageStreamTag",
+              "name": "ruby:2.5",
+              "namespace": "openshift"
+            }
+          },
+          "type": "Source"
         },
         "output": {
           "to": {
@@ -350,7 +357,7 @@
                 "image": " ",
                 "ports": [
                   {
-                    "containerPort": 4567,
+                    "containerPort": 8080,
                     "protocol": "TCP"
                   }
                 ],
@@ -367,7 +374,7 @@
                 "livenessProbe": {
                   "httpGet": {
                     "path": "/",
-                    "port": 4567,
+                    "port": 8080,
                     "scheme": "HTTP"
                   },
                   "failureThreshold": 3,
@@ -379,7 +386,7 @@
                 "readinessProbe": {
                   "httpGet": {
                     "path": "/",
-                    "port": 4567,
+                    "port": 8080,
                     "scheme": "HTTP"
                   },
                   "failureThreshold": 3,
