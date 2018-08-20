@@ -1,0 +1,435 @@
+{
+  "kind": "Template",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "ruby-hello-world",
+    "annotations": {
+      "openshift.io/display-name": "Ruby + Redis Hello World",
+      "description": "Simple Hello World Ruby application using Sinatra and Redis. Once deployed, the application will answer with 'Hello World!' if connection with Redis deployment was successful.",
+      "tags": "ruby,redis",
+      "iconClass": "icon-ruby",
+      "openshift.io/long-description": "This template was created to test OpenShift build configurations and deployments.", 
+      "openshift.io/provider-display-name": "Eleatzar Colomer",
+      "openshift.io/documentation-url": "https://github.com/ecolomer/openshift",
+      "openshift.io/support-url": "https://github.com/ecolomer/openshift",
+      "template.openshift.io/bindable": "false"
+    }
+  },
+  "message": "The following services have been created in your project: ${REDIS_NAME}, ${RUBY_NAME}.\n\nFor more information about using this template see https://github.com/ecolomer/openshift/blob/master/README.md.",
+  "labels": {
+      "template": "ruby-hello-world",
+      "app": "ruby-hello-world"
+  },
+  "objects": [
+    {
+      "kind": "Route",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${RUBY_NAME}"
+      },
+      "spec": {
+        "host": "${APPLICATION_DOMAIN}",
+        "to": {
+          "kind": "Service",
+          "name": "${RUBY_NAME}"
+        }
+      }
+    },
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${REDIS_NAME}",
+        "annotations": {
+          "description": "Exposes and load balances the Redis server pods"
+        }
+      },
+      "spec": {
+        "ports": [
+          {
+            "name": "redis-server",
+            "protocol": "TCP",
+            "port": 6379,
+            "targetPort": 6379
+          }
+        ],
+        "selector": {
+          "name": "${REDIS_NAME}"
+        },
+        "type": "ClusterIP",
+        "sessionAffinity": "None"
+      }
+    },
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${RUBY_NAME}",
+        "annotations": {
+          "description": "Exposes and load balances the Ruby application pods"
+        }
+      },
+      "spec": {
+        "ports": [
+          {
+            "name": "ruby-sinatra",
+            "protocol": "TCP",
+            "port": 4567,
+            "targetPort": 4567
+          }
+        ],
+        "selector": {
+          "name": "${RUBY_NAME}"
+        },
+        "type": "ClusterIP",
+        "sessionAffinity": "None"
+      }
+    },
+    {
+      "kind": "ImageStream",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${REDIS_NAME}",
+        "annotations": {
+          "description": "Keeps track of changes in the Redis application image"
+        }
+      }
+    },
+    {
+      "kind": "ImageStream",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${RUBY_NAME}",
+        "annotations": {
+          "description": "Keeps track of changes in the Ruby application image"
+        }
+      }
+    },
+    {
+      "kind": "BuildConfig",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${REDIS_NAME}",
+        "annotations": {
+          "description": "Defines how to build the Redis application",
+          "template.alpha.openshift.io/wait-for-ready": "true"
+        }
+      },
+      "spec": {
+        "source": {
+          "type": "Binary",
+          "binary": {}
+        },
+        "strategy": {
+          "type": "Docker"
+        },
+        "output": {
+          "to": {
+            "kind": "ImageStreamTag",
+            "name": "${REDIS_NAME}:latest"
+          }
+        },
+        "triggers": [
+          {
+            "type": "ImageChange"
+          },
+          {
+            "type": "ConfigChange"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "BuildConfig",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${RUBY_NAME}",
+        "annotations": {
+          "description": "Defines how to build the Ruby application",
+          "template.alpha.openshift.io/wait-for-ready": "true"
+        }
+      },
+      "spec": {
+        "source": {
+          "type": "Binary",
+          "binary": {}
+        },
+        "strategy": {
+          "type": "Docker"
+        },
+        "output": {
+          "to": {
+            "kind": "ImageStreamTag",
+            "name": "${RUBY_NAME}:latest"
+          }
+        },
+        "triggers": [
+          {
+            "type": "ImageChange"
+          },
+          {
+            "type": "ConfigChange"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "DeploymentConfig",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${REDIS_NAME}",
+        "annotations": {
+          "description": "Defines how to deploy the Redis server",
+          "template.alpha.openshift.io/wait-for-ready": "true"
+        }
+      },
+      "spec": {
+        "strategy": {
+          "type": "Rolling",
+          "rollingParams": {
+            "updatePeriodSeconds": 1,
+            "intervalSeconds": 1,
+            "timeoutSeconds": 600,
+            "maxUnavailable": "25%",
+            "maxSurge": "25%"
+          },
+          "resources": {},
+          "activeDeadlineSeconds": 21600
+        },
+        "triggers": [
+          {
+            "type": "ImageChange",
+            "imageChangeParams": {
+              "automatic": true,
+              "containerNames": [
+                "${REDIS_NAME}"
+              ],
+              "from": {
+                "kind": "ImageStreamTag",
+                "name": "${REDIS_NAME}:latest"
+              }
+            }
+          },
+          {
+            "type": "ConfigChange"
+          }
+        ],
+        "replicas": 1,
+        "selector": {
+          "name": "${REDIS_NAME}"
+        },
+        "template": {
+          "metadata": {
+            "name": "${REDIS_NAME}",
+            "labels": {
+              "name": "${REDIS_NAME}"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "${REDIS_NAME}",
+                "image": " ",
+                "ports": [
+                  {
+                    "containerPort": 6379,
+                    "protocol": "TCP"
+                  }
+                ],
+                "livenessProbe": {
+                  "exec": {
+                    "command": [
+                      "sh",
+                      "-c",
+                      "redis-cli -h $(hostname) ping"
+                    ]
+                  },
+                  "failureThreshold": 3,
+                  "initialDelaySeconds": 10,
+                  "periodSeconds": 10,
+                  "successThreshold": 1,
+                  "timeoutSeconds": 1
+                },
+                "readinessProbe": {
+                  "exec": {
+                    "command": [
+                      "sh",
+                      "-c",
+                      "redis-cli -h $(hostname) ping"
+                    ]
+                  },
+                  "failureThreshold": 3,
+                  "initialDelaySeconds": 10,
+                  "periodSeconds": 10,
+                  "successThreshold": 1,
+                  "timeoutSeconds": 1
+                },
+                "resources": {}
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "kind": "DeploymentConfig",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${RUBY_NAME}",
+        "annotations": {
+          "description": "Defines how to deploy the Ruby application server",
+          "template.alpha.openshift.io/wait-for-ready": "true"
+        }
+      },
+      "spec": {
+        "strategy": {
+          "type": "Rolling",
+          "rollingParams": {
+            "updatePeriodSeconds": 1,
+            "intervalSeconds": 1,
+            "timeoutSeconds": 600,
+            "maxUnavailable": "25%",
+            "maxSurge": "25%"
+          },
+          "resources": {},
+          "activeDeadlineSeconds": 21600
+        },
+        "triggers": [
+          {
+            "type": "ImageChange",
+            "imageChangeParams": {
+              "automatic": true,
+              "containerNames": [
+                "${RUBY_NAME}"
+              ],
+              "from": {
+                "kind": "ImageStreamTag",
+                "name": "${RUBY_NAME}:latest"
+              }
+            }
+          },
+          {
+            "type": "ConfigChange"
+          }
+        ],
+        "replicas": 1,
+        "selector": {
+          "name": "${RUBY_NAME}"
+        },
+        "template": {
+          "metadata": {
+            "name": "${RUBY_NAME}",
+            "labels": {
+              "name": "${RUBY_NAME}"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "${RUBY_NAME}",
+                "image": " ",
+                "ports": [
+                  {
+                    "containerPort": 4567,
+                    "protocol": "TCP"
+                  }
+                ],
+                "env": [
+                  {
+                    "name": "REDIS_HOST",
+                    "value": "${REDIS_NAME}"
+                  },
+                  {
+                    "name": "REDIS_PORT",
+                    "value": "6379"
+                  }
+                ],
+                "livenessProbe": {
+                  "httpGet": {
+                    "path": "/",
+                    "port": 4567,
+                    "scheme": "HTTP"
+                  },
+                  "failureThreshold": 3,
+                  "initialDelaySeconds": 10,
+                  "periodSeconds": 10,
+                  "successThreshold": 1,
+                  "timeoutSeconds": 1
+                },
+                "readinessProbe": {
+                  "httpGet": {
+                    "path": "/",
+                    "port": 4567,
+                    "scheme": "HTTP"
+                  },
+                  "failureThreshold": 3,
+                  "initialDelaySeconds": 10,
+                  "periodSeconds": 10,
+                  "successThreshold": 1,
+                  "timeoutSeconds": 1
+                },
+                "resources": {}
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "NAMESPACE",
+      "displayName": "Namespace",
+      "description": "The OpenShift Namespace where the application resides.",
+      "required": true,
+      "value": "ruby-hello-world" 
+    },
+    {
+      "name": "REDIS_NAME",
+      "displayName": "Redis App",
+      "description": "The name assigned to all of the Redis app related objects defined in this template.",
+      "required": true,
+      "value": "redis-app"
+    },
+    {
+      "name": "RUBY_NAME",
+      "displayName": "Ruby App",
+      "description": "The name assigned to all of the Ruby app related objects defined in this template.",
+      "required": true,
+      "value": "ruby-app"
+    },
+    {
+      "name": "APPLICATION_DOMAIN",
+      "displayName": "Application Domain Name",
+      "description": "The exposed domain name that will route to the Ruby app, if left blank a value will be defaulted.",
+      "value": ""
+    },
+    {
+      "name": "SOURCE_REPOSITORY_URL",
+      "displayName": "Git Repository URL",
+      "description": "The URL of the repository with your application source code and Dockerfiles.",
+      "required": true,
+      "value": "https://github.com/ecolomer/openshift.git"
+    },
+    {
+      "name": "SOURCE_REPOSITORY_REF",
+      "displayName": "Git Reference",
+      "description": "Set this to a branch name, tag or other ref of your repository if you are not using the default branch."
+    },
+    {
+      "name": "REDIS_CONTEXT_DIR",
+      "displayName": "Redis Context Directory",
+      "description": "Set this to the relative path of the Redis app directory.",
+      "required": true,
+      "value": "redis"
+    },
+    {
+      "name": "RUBY_CONTEXT_DIR",
+      "displayName": "Ruby Context Directory",
+      "description": "Set this to the relative path of the Ruby app directory.",
+      "required": true,
+      "value": "ruby"
+    }
+  ]
+}
+
